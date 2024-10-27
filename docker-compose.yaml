@@ -1,0 +1,57 @@
+services:
+  database:
+      image: mysql:8.0
+      environment:
+        MYSQL_ROOT_PASSWORD: password  
+        MYSQL_DATABASE: usuarios
+      ports:
+        - "3306:3306"  # Exponer el puerto 3306
+      volumes:
+        - mysql_data:/var/lib/mysql  # Persistencia de los datos en un volumen
+      networks:
+        - backend
+      deploy:
+        resources:
+          limits:
+            cpus: '0.50'
+            memory: 512M
+
+  redis:
+    image: redis:alpine
+    container_name: redis_service_user
+    networks:
+      - backend
+    ports:
+      - '${DOCKER_REDIS_PORT}:6379'
+    env_file:
+      - .env
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: users_backend
+    networks:
+      - backend
+    ports:
+      - '${DOCKER_BACKEND_PORT}:8080'
+    env_file:
+      - .env  # Cargamos variables de entorno desde el archivo .env
+    volumes:
+      - ./.env:/app/.env
+      - ./${JSON_KEY_FILE}:/app/${JSON_KEY_FILE}  # Montamos el archivo JSON en el contenedor del backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    depends_on:
+      - database
+      
+volumes:
+  mysql_data:
+
+networks:
+  backend:
+    external: false
+    name: prueba
