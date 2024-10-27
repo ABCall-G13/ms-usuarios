@@ -41,3 +41,23 @@ def test_get_user_by_document_and_client_not_found():
     # Assert
     assert result is None
     db.query().filter().first.assert_called_once()
+
+def test_validate_email_invalid_format():
+    # Arrange
+    invalid_email = "usuario-sin-arroba-y-punto"
+    
+    # Act & Assert
+    with pytest.raises(ValueError, match="El correo electrónico no es válido."):
+        usuario = Usuario(email=invalid_email)
+
+def test_validate_email_duplicate():
+    # Arrange
+    db = MagicMock(spec=Session)
+    email = "usuario@ejemplo.com"
+    
+    # Simula que el correo ya existe en la base de datos
+    db.query().filter().first.return_value = Usuario(email=email)
+    
+    # Act & Assert
+    with pytest.raises(ValueError, match="El usuario con ese correo ya está registrado."):
+        usuario = Usuario(email=email, session=db)
