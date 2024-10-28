@@ -5,8 +5,6 @@ steps:
     args:
       - '-c'
       - |
-        apt-get update && \
-        apt-get install -y gcc default-libmysqlclient-dev pkg-config && \
         python -m venv venv && \
         . venv/bin/activate && \
         pip install -r requirements.txt
@@ -19,7 +17,7 @@ steps:
       - 'production'
       - '-t'
       - '$_AR_HOSTNAME/$_PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$COMMIT_SHA'
-      - './'
+      - '.'
 
   - id: push
     name: 'gcr.io/cloud-builders/docker'
@@ -55,5 +53,3 @@ steps:
       - '--vpc-connector=$_VPC_CONNECTOR'
 options:
   logging: CLOUD_LOGGING_ONLY
-
-
