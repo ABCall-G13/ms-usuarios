@@ -1,3 +1,4 @@
+from io import BytesIO
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 import pandas as pd
@@ -10,9 +11,10 @@ def verificar_tipo_archivo(file: UploadFile, content_type_override=None):
             status_code=400, detail="El archivo debe ser de tipo Excel (.xlsx)"
         )
 
-def leer_archivo_excel(file):
+async def leer_archivo_excel(file: UploadFile):
     try:
-        df = pd.read_excel(file)
+        contents = await file.read()
+        df = pd.read_excel(BytesIO(contents))
         return df
     except Exception as e:
         raise HTTPException(

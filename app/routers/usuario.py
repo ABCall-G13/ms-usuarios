@@ -33,7 +33,7 @@ async def sync_users(
     await verificar_cliente_existente(nit_cliente)
     verificar_tipo_archivo(file)
 
-    df = leer_archivo_excel(file.file)
+    df = await leer_archivo_excel(file)
     verificar_columnas_requeridas(df)
     procesar_filas_y_actualizar_db(df, nit_cliente, db)
 

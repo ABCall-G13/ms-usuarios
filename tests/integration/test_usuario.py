@@ -122,5 +122,3 @@ def test_sync_users_success():
         assert user is not None
         assert user.nombre == "Test User"
         db.close()
-
-

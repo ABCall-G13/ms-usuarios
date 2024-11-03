@@ -20,8 +20,10 @@ def test_verificar_tipo_archivo():
     with pytest.raises(HTTPException):
         verificar_tipo_archivo(file, content_type_override="text/plain")
         
-def test_leer_archivo_excel():
-    # Crear un archivo Excel de prueba en memoria
+
+@pytest.mark.asyncio
+async def test_leer_archivo_excel():
+    # Create an in-memory Excel file
     df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     excel_file = BytesIO()
     df.to_excel(excel_file, index=False)
@@ -29,16 +31,17 @@ def test_leer_archivo_excel():
     file = UploadFile(filename="test.xlsx", file=excel_file)
     file._content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
-    result_df = leer_archivo_excel(file.file)
+    # Call the async function and await the result
+    result_df = await leer_archivo_excel(file)
     pd.testing.assert_frame_equal(result_df, df)
 
-    # Probar con un archivo no válido
+    # Test with an invalid file
     invalid_file = BytesIO(b"not an excel file")
     file = UploadFile(filename="test.xlsx", file=invalid_file)
     file._content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    
+
     with pytest.raises(HTTPException):
-        leer_archivo_excel(file.file)
+        await leer_archivo_excel(file)
 
 def test_verificar_columnas_requeridas():
     df = pd.DataFrame({
