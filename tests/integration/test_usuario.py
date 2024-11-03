@@ -5,7 +5,7 @@ from main import app
 from app.models.usuario import Usuario
 from app.dependencies import get_db
 from app.db.base import Base
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 from io import BytesIO
 import pandas as pd
 from fastapi import HTTPException
@@ -110,3 +110,73 @@ def test_sync_users_client_not_found(mock_verificar_cliente):
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Cliente no encontrado"}
+
+
+@patch("app.external_services.cliente_service.httpx.AsyncClient.get")
+def test_sync_users_success(mock_get):
+    # Configurar el mock para que simule una respuesta 200 del servicio de cliente
+    mock_response = AsyncMock()
+    mock_response.status_code = 200
+    mock_get.return_value = mock_response
+
+    # Crear un archivo Excel en memoria para simular la carga
+    data = {
+        "doc_type": ["CC"],
+        "doc_number": ["123456789"],
+        "nombre": ["Test User"],
+        "email": ["example@user.com"],
+        "telefono": ["1234567890"]
+    }
+    df = pd.DataFrame(data)
+    excel_file = BytesIO()
+    df.to_excel(excel_file, index=False)
+    excel_file.seek(0)
+
+    # Hacer la solicitud POST a la ruta `/sync-users/8812023` con el archivo Excel
+    response = client.post(
+        "/sync-users/8812023",
+        files={"file": ("usuarios.xlsx", excel_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+    )
+
+    # Verificar que la respuesta sea exitosa y los datos se hayan sincronizado
+    assert response.status_code == 200
+    assert response.json() == {"detail": "Datos sincronizados exitosamente"}
+
+    # Verificar que el usuario fue creado en la base de datos
+    db = TestingSessionLocal()
+    user = db.query(Usuario).filter_by(documento="123456789").first()
+    db.close()
+    assert user is not None
+    assert user.nombre == "Test User"
+    assert user.email == "example@user.com"
+
+@patch("app.external_services.cliente_service.httpx.AsyncClient.get")
+def test_sync_users_client_not_found(mock_get):
+    # Configurar el mock para simular una respuesta 404 del servicio de cliente
+    mock_response = AsyncMock()
+    mock_response.status_code = 404
+    mock_get.return_value = mock_response
+
+    # Crear un archivo Excel en memoria para simular la carga
+    data = {
+        "doc_type": ["CC"],
+        "doc_number": ["123456789"],
+        "nombre": ["Test User"],
+        "email": ["example@user.com"],
+        "telefono": ["1234567890"]
+    }
+    df = pd.DataFrame(data)
+    excel_file = BytesIO()
+    df.to_excel(excel_file, index=False)
+    excel_file.seek(0)
+
+    # Hacer la solicitud POST a la ruta `/sync-users/9999999` con el archivo Excel
+    response = client.post(
+        "/sync-users/9999999",
+        files={"file": ("usuarios.xlsx", excel_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+    )
+
+    # Verificar que la respuesta indique que el cliente no fue encontrado
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Cliente no encontrado"}
+
