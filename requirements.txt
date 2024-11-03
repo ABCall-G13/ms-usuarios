@@ -17,3 +17,5 @@ pandas
 python-multipart
 openpyxl
 pytest-asyncio
+yarl>=1.9.0
+
