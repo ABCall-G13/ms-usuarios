@@ -45,8 +45,7 @@ async def sync_users(
         if not required_columns.issubset(df.columns):
             raise HTTPException(
                 status_code=400,
-                detail=f"El archivo debe contener las columnas: {
-                    ', '.join(required_columns)}"
+                detail=f"El archivo debe contener las columnas: {', '.join(required_columns)}"
             )
 
         for _, row in df.iterrows():
