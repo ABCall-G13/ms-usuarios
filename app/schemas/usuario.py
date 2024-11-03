@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class UserResponse(BaseModel):
@@ -10,5 +10,4 @@ class UserResponse(BaseModel):
     documento: str
     nit_cliente: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
