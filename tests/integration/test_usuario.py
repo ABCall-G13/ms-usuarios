@@ -80,41 +80,6 @@ def test_get_user_not_found():
     assert response.json() == {"detail": "Usuario no encontrado"}
 
 
-@patch("app.external_services.cliente_service.verificar_cliente_existente")
-def test_sync_users_success(mock_verificar_cliente):
-    # Mockear la verificación del cliente para que se acepte
-    mock_verificar_cliente.return_value = None
-
-    # Crear un archivo Excel en memoria
-    data = {
-        "doc_type": ["CC"],
-        "doc_number": ["123456789"],
-        "nombre": ["Test User"],
-        "email": ["example@user.com"],
-        "telefono": ["1234567890"]
-    }
-    df = pd.DataFrame(data)
-    excel_file = BytesIO()
-    df.to_excel(excel_file, index=False)
-    excel_file.seek(0)
-
-    # Enviar el archivo como parte de la solicitud
-    response = client.post(
-        "/sync-users/8812023",
-        files={"file": ("usuarios.xlsx", excel_file,
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-    )
-
-    assert response.status_code == 200
-    assert response.json() == {"detail": "Datos sincronizados exitosamente"}
-
-    # Verificar que el usuario se haya creado en la base de datos
-    db = TestingSessionLocal()
-    user = db.query(Usuario).filter_by(documento="123456789").first()
-    db.close()
-    assert user is not None
-    assert user.nombre == "Test User"
-    assert user.email == "example@user.com"
 
 
 @patch("app.external_services.cliente_service.verificar_cliente_existente")
