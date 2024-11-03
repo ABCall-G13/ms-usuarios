@@ -78,3 +78,40 @@ def test_get_user_not_found():
         "/usuario", params={"doc_type": "CC", "doc_number": "987654321", "client": "test_client"})
     assert response.status_code == 404
     assert response.json() == {"detail": "Usuario no encontrado"}
+
+def test_sync_users_success():
+    # Prepare an in-memory Excel file with required data
+    data = {
+        "doc_type": ["CC"],
+        "doc_number": ["123456789"],
+        "nombre": ["Test User"],
+        "email": ["example@user.com"],
+        "telefono": ["1234567890"],
+    }
+    df = pd.DataFrame(data)
+    excel_file = BytesIO()
+    df.to_excel(excel_file, index=False)
+    excel_file.seek(0)
+
+    # Mock 'verificar_cliente_existente' to pass
+    with patch("app.routers.usuario.verificar_cliente_existente", new_callable=AsyncMock) as mock_verificar_cliente_existente:
+        mock_verificar_cliente_existente.return_value = None
+
+        # Prepare the file for upload
+        files = {"file": ("test.xlsx", excel_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+
+        # Make the POST request
+        response = client.post("/sync-users/8812023", files=files)
+
+        # Assert the response
+        assert response.status_code == 200
+        assert response.json() == {"detail": "Datos sincronizados exitosamente"}
+
+        # Verify the user was added to the database
+        db = TestingSessionLocal()
+        user = db.query(Usuario).filter_by(documento="123456789").first()
+        assert user is not None
+        assert user.nombre == "Test User"
+        db.close()
+
+
