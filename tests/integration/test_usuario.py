@@ -98,10 +98,19 @@ def test_sync_users_success():
         mock_verificar_cliente_existente.return_value = None
 
         # Prepare the file for upload
-        files = {"file": ("test.xlsx", excel_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+        files = {
+            "file": (
+                "test.xlsx",
+                excel_file,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        }
 
         # Make the POST request
         response = client.post("/sync-users/8812023", files=files)
+
+        # Print the response content
+        print(response.text)
 
         # Assert the response
         assert response.status_code == 200
