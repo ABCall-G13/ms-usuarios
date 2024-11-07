@@ -6,7 +6,7 @@ from app.dependencies import get_db
 import pandas as pd
 import httpx
 from app.utils.utils import verificar_tipo_archivo, leer_archivo_excel, verificar_columnas_requeridas, procesar_filas_y_actualizar_db
-from app.utils.security import get_current_email
+from app.utils.security import UserToken, get_current_user_token
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Request
 
 router = APIRouter()
@@ -25,15 +25,19 @@ async def get_user(
 
 @router.post("/sync-users")
 async def sync_users(
+    user_token: UserToken = Depends(get_current_user_token),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    email: str = Depends(get_current_email)
+    db: Session = Depends(get_db)
 ):
-    nit = await verificar_cliente_existente(email)
-    verificar_tipo_archivo(file)
+    try:
+        nit = await verificar_cliente_existente(user_token.email, user_token.token)
+        verificar_tipo_archivo(file)
 
-    df = await leer_archivo_excel(file)
-    verificar_columnas_requeridas(df)
-    procesar_filas_y_actualizar_db(df, nit , db)
+        df = await leer_archivo_excel(file)
+        verificar_columnas_requeridas(df)
+        procesar_filas_y_actualizar_db(df, nit, db)
 
-    return {"detail": "Datos sincronizados exitosamente"}
+        return {"detail": "Datos sincronizados exitosamente"}
+    except Exception as e:
+        # Puedes personalizar el manejo de excepciones según tus necesidades
+        raise HTTPException(status_code=500, detail=str(e))

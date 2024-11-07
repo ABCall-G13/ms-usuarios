@@ -8,7 +8,7 @@ from app.db.base import Base
 from unittest.mock import patch, AsyncMock
 from io import BytesIO
 import pandas as pd
-from app.utils.security import get_current_email
+from app.utils.security import UserToken, get_current_user_token
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -32,11 +32,10 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
-# Mock para la dependencia `get_current_email`
-def mock_get_current_email():
-    return "example@user.com"
+def mock_get_current_user_token():
+    return UserToken(email="example@user.com", token="test_token")
 
-app.dependency_overrides[get_current_email] = mock_get_current_email
+app.dependency_overrides[get_current_user_token] = mock_get_current_user_token
 
 client = TestClient(app)
 
@@ -123,3 +122,73 @@ def test_sync_users_success():
         assert user is not None
         assert user.nombre == "Test User"
         db.close()
+
+def test_sync_users_invalid_file():
+    # Prepara un archivo Excel en memoria con columnas incorrectas
+    data = {
+        "documento": ["123456789"],
+        "nombre": ["Test User"],
+        "email": ["prueba@gmail.com"],
+        "telefono": ["1234567890"],
+    }
+    df = pd.DataFrame(data)
+    excel_file = BytesIO()
+    df.to_excel(excel_file, index=False)
+    excel_file.seek(0)
+
+    # Prepara el archivo para la carga
+    files = {
+        "file": (
+            "test.xlsx",
+            excel_file,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    }
+
+    # Realiza la petición POST
+    response = client.post("/sync-users", files=files)
+
+    # Verifica la respuesta
+    assert response.status_code == 500
+
+
+def test_sync_users_exception():
+    # Prepara un archivo Excel en memoria con los datos necesarios
+    data = {
+        "doc_type": ["CC"],
+        "doc_number": ["123456789"],
+        "nombre": ["Test User"],
+        "email": ["prueba@gmail.com"],
+        "telefono": ["1234567890"],
+    }
+
+    df = pd.DataFrame(data)
+    excel_file = BytesIO()
+    
+    df.to_excel(excel_file, index=False)
+    excel_file.seek(0)
+
+    # Mock de `verificar_cliente_existente` para que falle
+    with patch("app.routers.usuario.verificar_cliente_existente", new_callable=AsyncMock) as mock_verificar_cliente_existente:
+        mock_verificar_cliente_existente.side_effect = Exception("Error en la verificación")
+
+        # Prepara el archivo para la carga
+        files = {
+            "file": (
+                "test.xlsx",
+                excel_file,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        }
+
+        # Realiza la petición POST
+        response = client.post("/sync-users", files=files)
+
+        # Verifica la respuesta
+        assert response.status_code == 500
+        assert response.json() == {"detail": "Error en la verificación"}
+
+
+
+        
+
