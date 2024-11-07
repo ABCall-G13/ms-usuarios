@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from jose import jwt
 from app.dependencies import get_db
 from app import config
-from app.utils.security import get_current_email
+from app.utils.security import get_current_user_token
 
 SECRET_KEY = config.SECRET_KEY
 ALGORITHM = "HS256"
@@ -32,17 +32,18 @@ def request_without_token():
 
 def test_get_current_email_valid_token(request_with_valid_token, db):
     request = type('Request', (object,), {"headers": request_with_valid_token})
-    email = get_current_email(request, db)
-    assert email == "test@example.com"
+    user_token = get_current_user_token(request, db)
+    assert user_token.email == "test@example.com"
+    assert user_token.token is not None
 
 def test_get_current_email_invalid_token(request_with_invalid_token, db):
     request = type('Request', (object,), {"headers": request_with_invalid_token})
     with pytest.raises(HTTPException) as excinfo:
-        get_current_email(request, db)
+        get_current_user_token(request, db)
     assert excinfo.value.status_code == 401
 
 def test_get_current_email_without_token(request_without_token, db):
     request = type('Request', (object,), {"headers": request_without_token})
     with pytest.raises(HTTPException) as excinfo:
-        get_current_email(request, db)
+        get_current_user_token(request, db)
     assert excinfo.value.status_code == 401

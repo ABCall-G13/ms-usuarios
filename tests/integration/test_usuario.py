@@ -8,7 +8,7 @@ from app.db.base import Base
 from unittest.mock import patch, AsyncMock
 from io import BytesIO
 import pandas as pd
-from app.utils.security import get_current_email
+from app.utils.security import UserToken, get_current_user_token
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -32,11 +32,10 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
-# Mock para la dependencia `get_current_email`
-def mock_get_current_email():
-    return "example@user.com"
+def mock_get_current_user_token():
+    return UserToken(email="example@user.com", token="test_token")
 
-app.dependency_overrides[get_current_email] = mock_get_current_email
+app.dependency_overrides[get_current_user_token] = mock_get_current_user_token
 
 client = TestClient(app)
 
