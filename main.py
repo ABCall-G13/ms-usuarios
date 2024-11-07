@@ -6,6 +6,7 @@ from app.db.base import Base
 
 origins = [
     "http://localhost:3000",
+    "https://front-abcall-345518488840.us-central1.run.app"
 ]
 
 
