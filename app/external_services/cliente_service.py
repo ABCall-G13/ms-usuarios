@@ -19,7 +19,5 @@ async def verificar_cliente_existente(email: str, token: str) -> str:
         
         cliente_data = response.json()
         nit = cliente_data.get("nit")
-        if nit is None:
-            raise HTTPException(status_code=500, detail="La respuesta no contiene el NIT del cliente")
         
         return nit
