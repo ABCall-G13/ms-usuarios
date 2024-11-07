@@ -17,7 +17,6 @@ async def get_user(
     doc_number: str,
     client: str,
     db: Session = Depends(get_db),
-    email: str = Depends(get_current_email)
 ):
     user = get_user_by_document_and_client(db, doc_type, doc_number, client)
     if not user:
