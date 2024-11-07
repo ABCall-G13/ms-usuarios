@@ -35,3 +35,5 @@ async def test_verificar_cliente_existente_error_al_verificar():
         assert exc_info.value.status_code == 500
         assert exc_info.value.detail == "Error al verificar el cliente"
 
+
+
