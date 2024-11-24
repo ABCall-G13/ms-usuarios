@@ -20,7 +20,7 @@ def get_current_user_token(request: Request, db: Session = Depends(get_db)) -> U
     )
     
     # Obtener el token de los encabezados
-    token = request.headers.get("Authorization") or request.headers.get("X-Forwarded-Authorization")
+    token = request.headers.get("X-Forwarded-Authorization") or request.headers.get("Authorization")
     
     if not token or not token.startswith("Bearer "):
         raise credentials_exception
